@@ -13,9 +13,10 @@ public class GameManager : MonoBehaviour
     private int energy = 0, waitingTime = 0;
 
     public int globalElevatorPos;
+    private int oldElevatorPos;
 
     public bool simPlaying;
-    public bool simSkipped;
+    public bool simHistory;
 
     public TMP_InputField totalCalls;
     public int numOfCalls;
@@ -25,32 +26,63 @@ public class GameManager : MonoBehaviour
 
     public Slider slider;
     public TMP_InputField[] parkInputs;
+    public Button historyButton;
 
     public int errorType;
+    public float errorWaitTime;
 
-    public RectTransform elevator;
-    public float[] yFloorPositions = { -143, -86, -35, 16, 66, 119 };
+    public Transform elevator;
+    public float elevatorSpeed;
+    public float elevatorWaitTime;
+    public float[] yFloorPositions;
+    private int currentElevatorPosition, newElevatorPosition;
+    private int elevatorUpdatePhase;
 
     public GameObject[] errorTypes;
+    public GameObject[] floorMarkers;
+    public GameObject[] parkMarkers;
+
+    private bool programSleeping = false;
+
+    public TextMeshProUGUI callHistory;
+    private int callHistoryLines;
 
     // Start is called before the first frame update
     void Start()
     {
+        programSleeping = false;
+
         errorType = 0;
         simPlaying = false;
-        simSkipped = false;
+        simHistory = false;
+
+        historyButton.interactable = true;
 
         energy = 0;
         waitingTime = 0;
 
         totalCost = 0;
         costCounter.text = "Total Cost: 0";
+
+        callHistory.text = "";
+        callHistoryLines = 0;
+        
         globalElevatorPos = 0;
-        elevator.localPosition = new Vector3(elevator.localPosition.x, yFloorPositions[0]);
+        currentElevatorPosition = 0;
+        newElevatorPosition = 0;
+        elevator.transform.position = new Vector3(elevator.transform.position.x, yFloorPositions[0]);
 
         for (int i = 0; i < errorTypes.Length; i++)
         {
             errorTypes[i].SetActive(false);
+        }
+        for (int i = 0; i < floorMarkers.Length; i++)
+        {
+            floorMarkers[i].SetActive(false);
+        }
+        for (int i = 0; i < parkMarkers.Length; i++)
+        {
+            parkMarkers[i].SetActive(false);
         }
     }
 
@@ -59,22 +91,170 @@ public class GameManager : MonoBehaviour
     {
         if (simPlaying)
         {
-            for (int i = 0; i < numOfCalls; i++)
+            if (simHistory == false)
             {
-                SimulateNextCall(globalElevatorPos);
+                callHistory.text = "";
+                for (int i = 0; i < numOfCalls; i++)
+                {
+                    SimulateNextCall(globalElevatorPos);
 
-                totalCost += Cost(waitingTime, energy, weight);
-                costCounter.text = "Total Cost: " + (int) totalCost;
+                    totalCost += Cost(waitingTime, energy, weight);
+                    costCounter.text = "Total Cost: " + (int)totalCost;
 
-                energy = 0;
-                waitingTime = 0;
+                    energy = 0;
+                    waitingTime = 0;
+                }
+
+                errorType = 0;
+                simPlaying = false;
+                simHistory = false;
+                totalCost = 0;
+                globalElevatorPos = 0;
+                historyButton.interactable = true;
             }
+            else
+            {
+                if (programSleeping == false)
+                {
+                    if (numOfCalls > 0)
+                    {
+                        floorMarkers[currentElevatorPosition].SetActive(false);
+                        parkMarkers[currentElevatorPosition].SetActive(false);
 
-            errorType = 0;
-            simPlaying = false;
-            simSkipped = false;
-            totalCost = 0;
-            globalElevatorPos = 0;
+                        //move elevator
+                        if (currentElevatorPosition > newElevatorPosition)
+                        {
+                            if (elevator.transform.position.y > yFloorPositions[newElevatorPosition])
+                            {
+                                elevator.transform.Translate(new Vector3(0, -1 * elevatorSpeed * Time.deltaTime));
+                            }
+                            else StartCoroutine(StopElevator(elevatorWaitTime));
+                        }
+                        else if (currentElevatorPosition < newElevatorPosition)
+                        {
+                            if (elevator.transform.position.y < yFloorPositions[newElevatorPosition])
+                            {
+                                elevator.transform.Translate(new Vector3(0, elevatorSpeed * Time.deltaTime));
+                            }
+                            else StartCoroutine(StopElevator(elevatorWaitTime));
+                        }
+                        else
+                        {
+                            if (elevatorUpdatePhase == 0)
+                            {
+                                //elevator is called to a passenger
+                                int probability = Random.Range(0, 2);
+                                if (probability == 0)
+                                {
+                                    nextCall = 0;
+                                }
+                                else
+                                {
+                                    nextCall = Random.Range(1, 6);
+                                }
+
+                                if (globalElevatorPos == nextCall)
+                                {
+                                    parkMarkers[globalElevatorPos].SetActive(false);
+                                    floorMarkers[globalElevatorPos].SetActive(true);
+                                    StartCoroutine(StopElevator(elevatorWaitTime));
+                                }
+                                else floorMarkers[nextCall].SetActive(true);
+
+                                //move elevator to call position
+                                globalElevatorPos = nextCall;
+                                waitingTime += Mathf.Abs(nextCall - currentElevatorPosition);
+                                energy += Mathf.Abs(nextCall - currentElevatorPosition);
+
+                                callHistory.text += "\nCall from " + nextCall;
+
+                                elevatorUpdatePhase = 1;
+                            }
+                            else if (elevatorUpdatePhase == 1)
+                            {
+                                //elevator goes to its destination
+                                //if nextCall 1 - 5: move elevator to 0, add to energy
+                                if (nextCall >= 1)
+                                {
+                                    globalElevatorPos = 0;
+                                    energy += Mathf.Abs(nextCall - globalElevatorPos);
+                                }
+                                //else move elevator to Random.Range(1, 5), add to energy
+                                else
+                                {
+                                    globalElevatorPos = Random.Range(1, 6);
+                                    energy += Mathf.Abs(nextCall - globalElevatorPos);
+                                }
+                                oldElevatorPos = globalElevatorPos;
+                                floorMarkers[globalElevatorPos].SetActive(true);
+
+                                callHistory.text += " to " + oldElevatorPos + ". ";
+
+                                elevatorUpdatePhase = 2;
+                            }
+                            else if (elevatorUpdatePhase == 2)
+                            {
+                                //park elevator based on final position and add to energy
+                                globalElevatorPos = parks[oldElevatorPos];
+                                energy += Mathf.Abs(globalElevatorPos - oldElevatorPos);
+
+                                if (globalElevatorPos == oldElevatorPos)
+                                {
+                                    floorMarkers[oldElevatorPos].SetActive(false);
+                                    parkMarkers[oldElevatorPos].SetActive(true);
+                                    StartCoroutine(StopElevator(elevatorWaitTime));
+                                }
+                                else parkMarkers[globalElevatorPos].SetActive(true);
+
+                                callHistory.text += "Parked at " + globalElevatorPos + ". ";
+
+                                elevatorUpdatePhase = 3;
+                            }
+                            else if (elevatorUpdatePhase == 3)
+                            {
+                                //call is complete
+                                float x = Cost(waitingTime, energy, weight);
+                                totalCost += x;
+                                costCounter.text = "Total Cost: " + (int)totalCost;
+
+                                callHistory.text += "Cost: " + (int) x;
+
+                                energy = 0;
+                                waitingTime = 0;
+                                elevatorUpdatePhase = 0;
+
+                                callHistoryLines++;
+                                numOfCalls--;
+                            }
+                            newElevatorPosition = globalElevatorPos;
+                        }
+                        if (callHistoryLines == 10)
+                        {
+                            StartCoroutine(StopElevator(1f));
+                            callHistory.text = "";
+                            callHistoryLines = 0;
+                        }
+                    }
+                    else
+                    {
+                        elevator.transform.position = new Vector3(elevator.transform.position.x, yFloorPositions[0]);
+                        errorType = 0;
+                        simPlaying = false;
+                        simHistory = false;
+                        historyButton.interactable = true;
+                        totalCost = 0;
+                        globalElevatorPos = 0;
+                        for (int i = 0; i < floorMarkers.Length; i++)
+                        {
+                            floorMarkers[i].SetActive(false);
+                        }
+                        for (int i = 0; i < parkMarkers.Length; i++)
+                        {
+                            parkMarkers[i].SetActive(false);
+                        }
+                    }
+                }
+            }
         }
         else
         {
@@ -85,30 +265,30 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    IEnumerator errorReset(float time, int errorType)
+    IEnumerator StopElevator(float time)
     {
+        programSleeping = true;
         yield return new WaitForSeconds(time);
-        errorTypes[errorType].SetActive(false);
+        currentElevatorPosition = newElevatorPosition;
+        programSleeping = false;
     }
 
     private void SimulateNextCall(int elevatorPos)
     {
-        int probability = Random.Range(0, 1);
+        int probability = Random.Range(0, 2);
         if (probability == 0)
         {
             nextCall = 0;
         }
         else
         {
-            nextCall = Random.Range(1, 5);
+            nextCall = Random.Range(1, 6);
         }
-        //indicate call with arrow
+
         //move elevator to call position
-        print("about to move");
-        StartCoroutine(UpdateElevatorPosition(elevatorPos, globalElevatorPos));
         globalElevatorPos = nextCall;
-        waitingTime += Mathf.Abs(nextCall - parks[elevatorPos]);
-        energy += Mathf.Abs(nextCall - parks[elevatorPos]);
+        waitingTime += Mathf.Abs(nextCall - elevatorPos);
+        energy += Mathf.Abs(nextCall - elevatorPos);
 
         //if nextCall 1 - 5: move elevator to 0, add to energy
         if (nextCall >= 1)
@@ -119,7 +299,7 @@ public class GameManager : MonoBehaviour
         //else move elevator to Random.Range(1, 5), add to energy
         else
         {
-            globalElevatorPos = Random.Range(1, 5);
+            globalElevatorPos = Random.Range(1, 6);
             energy += Mathf.Abs(nextCall - globalElevatorPos);
         }
         //park elevator based on final position and add to energy
@@ -128,22 +308,7 @@ public class GameManager : MonoBehaviour
         energy += Mathf.Abs(globalElevatorPos - oldElevatorPos);
     }
 
-
-    IEnumerator UpdateElevatorPosition(int oldPosition, int newPosition)
-    {
-        print("moving");
-        /*
-        float translation = yFloorPositions[newPosition] - yFloorPositions[oldPosition];
-        for (int i = 0; i < Mathf.Abs(translation); i++)
-        {
-            elevator.localPosition = new Vector3(elevator.localPosition.x, elevator.localPosition.y + 100 + (translation / Mathf.Abs(translation)));
-            yield return new WaitForEndOfFrame();
-        }
-        */
-        yield return new WaitForSeconds(0f);
-    }
-
-    public void PlayButtonPressed()
+    public void GoButtonPressed()
     {
         errorType = 0;
         //check parking input fields
@@ -176,17 +341,69 @@ public class GameManager : MonoBehaviour
         }
         else errorType = 4;
 
-        if (errorType == 0) simPlaying = true;
+        if (errorType == 0 && simPlaying == false) 
+        { 
+            simPlaying = true;
+            callHistory.text = "";
+            callHistoryLines = 0;
+        }
         else
         {
             errorTypes[errorType].SetActive(true);
-            StartCoroutine(errorReset(3f, errorType));
+            StartCoroutine(errorReset(errorWaitTime, errorType));
         }
     }
-    
-    public void skipSim()
+
+    IEnumerator errorReset(float time, int errorType)
     {
-        if (simPlaying) simSkipped = true;
+        yield return new WaitForSeconds(time);
+        errorTypes[errorType].SetActive(false);
+    }
+
+    public void recordHistory()
+    {
+        if (simPlaying == false) { 
+            simHistory = true;
+            historyButton.interactable = false;
+        }
+    }
+
+    public void cancelSim()
+    {
+        programSleeping = false;
+
+        errorType = 0;
+        simPlaying = false;
+        simHistory = false;
+
+        historyButton.interactable = true;
+
+        energy = 0;
+        waitingTime = 0;
+
+        totalCost = 0;
+        costCounter.text = "Total Cost: 0";
+
+        callHistory.text = "";
+        callHistoryLines = 0;
+
+        globalElevatorPos = 0;
+        currentElevatorPosition = 0;
+        newElevatorPosition = 0;
+        elevator.transform.position = new Vector3(elevator.transform.position.x, yFloorPositions[0]);
+
+        for (int i = 0; i < errorTypes.Length; i++)
+        {
+            errorTypes[i].SetActive(false);
+        }
+        for (int i = 0; i < floorMarkers.Length; i++)
+        {
+            floorMarkers[i].SetActive(false);
+        }
+        for (int i = 0; i < parkMarkers.Length; i++)
+        {
+            parkMarkers[i].SetActive(false);
+        }
     }
 
     private float Cost(float m, float n, float w)
