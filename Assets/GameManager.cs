@@ -108,7 +108,7 @@ public class GameManager : MonoBehaviour
                     SimulateNextCall(globalElevatorPos);
 
                     totalCost += Cost(energy, waitingTime, weight);
-                    costCounter.text = "Cost per Call: " + Mathf.Round(totalCost/i * Mathf.Pow(10, numOfDecimals)) / Mathf.Pow(10, numOfDecimals);
+                    costCounter.text = "Cost per Call: " + Mathf.Round(totalCost/(i+1) * Mathf.Pow(10, numOfDecimals)) / Mathf.Pow(10, numOfDecimals);
 
                     energy = 0;
                     waitingTime = 0;
