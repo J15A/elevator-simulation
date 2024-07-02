@@ -47,10 +47,17 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI callHistory;
     private int callHistoryLines;
 
+    public int numOfDecimals;
+    private int callCounter;
+
     // Start is called before the first frame update
     void Start()
     {
         programSleeping = false;
+
+        elevatorUpdatePhase = 0;
+
+        callCounter = 0;
 
         errorType = 0;
         simPlaying = false;
@@ -62,7 +69,7 @@ public class GameManager : MonoBehaviour
         waitingTime = 0;
 
         totalCost = 0;
-        costCounter.text = "Total Cost: 0";
+        costCounter.text = "Cost per Call: ";
 
         callHistory.text = "";
         callHistoryLines = 0;
@@ -84,6 +91,8 @@ public class GameManager : MonoBehaviour
         {
             parkMarkers[i].SetActive(false);
         }
+
+        weight = 1;
     }
 
     // Update is called once per frame
@@ -98,8 +107,8 @@ public class GameManager : MonoBehaviour
                 {
                     SimulateNextCall(globalElevatorPos);
 
-                    totalCost += Cost(waitingTime, energy, weight);
-                    costCounter.text = "Total Cost: " + (int)totalCost;
+                    totalCost += Cost(energy, waitingTime, weight);
+                    costCounter.text = "Cost per Call: " + Mathf.Round(totalCost/i * Mathf.Pow(10, numOfDecimals)) / Mathf.Pow(10, numOfDecimals);
 
                     energy = 0;
                     waitingTime = 0;
@@ -161,11 +170,10 @@ public class GameManager : MonoBehaviour
                                 }
                                 else floorMarkers[nextCall].SetActive(true);
 
-                                //move elevator to call position
+                                //move elevator to call position                               
+                                waitingTime += Mathf.Abs(nextCall - globalElevatorPos);
+                                energy += Mathf.Abs(nextCall - globalElevatorPos);
                                 globalElevatorPos = nextCall;
-                                waitingTime += Mathf.Abs(nextCall - currentElevatorPosition);
-                                energy += Mathf.Abs(nextCall - currentElevatorPosition);
-
                                 callHistory.text += "\nCall from " + nextCall;
 
                                 elevatorUpdatePhase = 1;
@@ -213,11 +221,13 @@ public class GameManager : MonoBehaviour
                             else if (elevatorUpdatePhase == 3)
                             {
                                 //call is complete
-                                float x = Cost(waitingTime, energy, weight);
-                                totalCost += x;
-                                costCounter.text = "Total Cost: " + (int)totalCost;
+                                callCounter++;
 
-                                callHistory.text += "Cost: " + (int) x;
+                                float x = Cost(energy, waitingTime, weight);
+                                totalCost += x;
+                                costCounter.text = "Cost per Call: " + Mathf.Round(totalCost / callCounter * Mathf.Pow(10, numOfDecimals)) / Mathf.Pow(10, numOfDecimals);
+
+                                callHistory.text += "Cost: " + Mathf.Round(x);
 
                                 energy = 0;
                                 waitingTime = 0;
@@ -329,7 +339,7 @@ public class GameManager : MonoBehaviour
         if (totalCalls.text != "")
         {
             int n = int.Parse(totalCalls.text);
-            if (n > 1000000)
+            if (n > 10000000)
             {
                 errorType = 2;
             }
@@ -372,6 +382,10 @@ public class GameManager : MonoBehaviour
     {
         programSleeping = false;
 
+        callCounter = 0;
+
+        elevatorUpdatePhase = 0;
+
         errorType = 0;
         simPlaying = false;
         simHistory = false;
@@ -382,7 +396,7 @@ public class GameManager : MonoBehaviour
         waitingTime = 0;
 
         totalCost = 0;
-        costCounter.text = "Total Cost: 0";
+        costCounter.text = "Cost per Call: ";
 
         callHistory.text = "";
         callHistoryLines = 0;
@@ -406,8 +420,46 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private float Cost(float m, float n, float w)
+    private float Cost(float m, float n, int w)
     {
-        return (w/5 * m) + ((10 - w)/5 * n);
+        print (m + " " + n + " " + w);
+        return m + w*n;
     }
+
+    public void plusButton(int n)
+    {
+        if (n < 6)
+        {
+            int x = int.Parse(parkInputs[n].text);
+            x++;
+            if (x > 5) x = 0;
+            parkInputs[n].text = x.ToString();
+        }
+        else
+        {
+            float x = int.Parse(totalCalls.text);
+            int y = Mathf.RoundToInt(x * 10f);
+            if (y > 1000000) y = 1000000;
+            totalCalls.text = y.ToString();
+        }
+    }
+
+    public void minusButton(int n)
+    {
+        if (n < 6)
+        {
+            int x = int.Parse(parkInputs[n].text);
+            x--;
+            if (x < 0) x = 5;
+            parkInputs[n].text = x.ToString();
+        }
+        else
+        {
+            float x = int.Parse(totalCalls.text);
+            int y = Mathf.RoundToInt(x/10f);
+            if (y < 1) y = 1;
+            totalCalls.text = y.ToString();
+        }
+    }
+
 }
