@@ -439,7 +439,7 @@ public class GameManager : MonoBehaviour
         {
             float x = int.Parse(totalCalls.text);
             int y = Mathf.RoundToInt(x * 10f);
-            if (y > 1000000) y = 1000000;
+            if (y > 1000000) y = 1;
             totalCalls.text = y.ToString();
         }
     }
@@ -457,7 +457,7 @@ public class GameManager : MonoBehaviour
         {
             float x = int.Parse(totalCalls.text);
             int y = Mathf.RoundToInt(x/10f);
-            if (y < 1) y = 1;
+            if (y < 1) y = 1000000;
             totalCalls.text = y.ToString();
         }
     }
