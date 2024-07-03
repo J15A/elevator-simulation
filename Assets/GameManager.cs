@@ -69,9 +69,9 @@ public class GameManager : MonoBehaviour
         waitingTime = 0;
 
         totalCost = 0;
-        costCounter.text = "Cost per Call: ";
+        costCounter.text = "Cost per Call: <i>No calls yet<i>";
 
-        callHistory.text = "";
+        callHistory.text = "\n<i>No calls yet, press \"History\", then \"GO\" to see the elevator in action.<i>";
         callHistoryLines = 0;
         
         globalElevatorPos = 0;
@@ -102,7 +102,7 @@ public class GameManager : MonoBehaviour
         {
             if (simHistory == false)
             {
-                callHistory.text = "";
+                callHistory.text = "\n<i>No calls yet, press \"History\", then \"GO\" to see the elevator in action.<i>";
                 for (int i = 0; i < numOfCalls; i++)
                 {
                     SimulateNextCall(globalElevatorPos);
@@ -339,7 +339,7 @@ public class GameManager : MonoBehaviour
         if (totalCalls.text != "")
         {
             int n = int.Parse(totalCalls.text);
-            if (n > 10000000)
+            if (n > 1000000)
             {
                 errorType = 2;
             }
@@ -396,9 +396,9 @@ public class GameManager : MonoBehaviour
         waitingTime = 0;
 
         totalCost = 0;
-        costCounter.text = "Cost per Call: ";
+        costCounter.text = "Cost per Call: <i>No calls yet<i>";
 
-        callHistory.text = "";
+        callHistory.text = "\n<i>No calls yet, press \"History\", then \"GO\" to see the elevator in action.<i>";
         callHistoryLines = 0;
 
         globalElevatorPos = 0;
