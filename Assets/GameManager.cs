@@ -130,7 +130,7 @@ public class GameManager : MonoBehaviour
                         floorMarkers[currentElevatorPosition].SetActive(false);
                         parkMarkers[currentElevatorPosition].SetActive(false);
 
-                        //move elevator
+                        // move elevator
                         if (currentElevatorPosition > newElevatorPosition)
                         {
                             if (elevator.transform.position.y > yFloorPositions[newElevatorPosition])
@@ -151,7 +151,7 @@ public class GameManager : MonoBehaviour
                         {
                             if (elevatorUpdatePhase == 0)
                             {
-                                //elevator is called to a passenger
+                                // elevator is called to a passenger
                                 int probability = Random.Range(0, 2);
                                 if (probability == 0)
                                 {
@@ -170,7 +170,7 @@ public class GameManager : MonoBehaviour
                                 }
                                 else floorMarkers[nextCall].SetActive(true);
 
-                                //move elevator to call position                               
+                                // move elevator to call position                               
                                 waitingTime += Mathf.Abs(nextCall - globalElevatorPos);
                                 energy += Mathf.Abs(nextCall - globalElevatorPos);
                                 globalElevatorPos = nextCall;
@@ -180,14 +180,14 @@ public class GameManager : MonoBehaviour
                             }
                             else if (elevatorUpdatePhase == 1)
                             {
-                                //elevator goes to its destination
-                                //if nextCall 1 - 5: move elevator to 0, add to energy
+                                // elevator goes to its destination
+                                // if nextCall 1 - 5: move elevator to 0, add to energy
                                 if (nextCall >= 1)
                                 {
                                     globalElevatorPos = 0;
                                     energy += Mathf.Abs(nextCall - globalElevatorPos);
                                 }
-                                //else move elevator to Random.Range(1, 5), add to energy
+                                // else move elevator to Random.Range(1, 5), add to energy
                                 else
                                 {
                                     globalElevatorPos = Random.Range(1, 6);
@@ -202,7 +202,7 @@ public class GameManager : MonoBehaviour
                             }
                             else if (elevatorUpdatePhase == 2)
                             {
-                                //park elevator based on final position and add to energy
+                                // park elevator based on final position and add to energy
                                 globalElevatorPos = parks[oldElevatorPos];
                                 energy += Mathf.Abs(globalElevatorPos - oldElevatorPos);
 
@@ -220,7 +220,7 @@ public class GameManager : MonoBehaviour
                             }
                             else if (elevatorUpdatePhase == 3)
                             {
-                                //call is complete
+                                // call is complete
                                 callCounter++;
 
                                 float x = Cost(energy, waitingTime, weight);
@@ -295,24 +295,24 @@ public class GameManager : MonoBehaviour
             nextCall = Random.Range(1, 6);
         }
 
-        //move elevator to call position
+        // move elevator to call position
         globalElevatorPos = nextCall;
         waitingTime += Mathf.Abs(nextCall - elevatorPos);
         energy += Mathf.Abs(nextCall - elevatorPos);
 
-        //if nextCall 1 - 5: move elevator to 0, add to energy
+        // if nextCall 1 - 5: move elevator to 0, add to energy
         if (nextCall >= 1)
         {
             globalElevatorPos = 0;
             energy += Mathf.Abs(nextCall - globalElevatorPos);
         }
-        //else move elevator to Random.Range(1, 5), add to energy
+        // else move elevator to Random.Range(1, 5), add to energy
         else
         {
             globalElevatorPos = Random.Range(1, 6);
             energy += Mathf.Abs(nextCall - globalElevatorPos);
         }
-        //park elevator based on final position and add to energy
+        // park elevator based on final position and add to energy
         int oldElevatorPos = globalElevatorPos;
         globalElevatorPos = parks[oldElevatorPos];
         energy += Mathf.Abs(globalElevatorPos - oldElevatorPos);
@@ -321,7 +321,7 @@ public class GameManager : MonoBehaviour
     public void GoButtonPressed()
     {
         errorType = 0;
-        //check parking input fields
+        // check parking input fields
         for (int i = 0; i < 6; i++)
         {
             if (parkInputs[i].text != "")
@@ -335,7 +335,7 @@ public class GameManager : MonoBehaviour
             }
             else errorType = 4;
         }
-        //check number of calls field
+        // check number of calls field
         if (totalCalls.text != "")
         {
             int n = int.Parse(totalCalls.text);
@@ -422,7 +422,8 @@ public class GameManager : MonoBehaviour
 
     private float Cost(float m, float n, int w)
     {
-        print (m + " " + n + " " + w);
+        // used for testing
+        // print (m + " " + n + " " + w);
         return m + w*n;
     }
 
