@@ -1,6 +1,8 @@
 # Elevator-Sim
 This is a Monte Carlo simulation developed to accompany a discrete optimization problem used for enrichment activities in Mathematics summer camps held by Queen’s University.
 
+**Technologies Used:** Unity, C#, WebGL
+
 ## The problem
 You have been asked to program the elevator by the owner of an apartment building. The building has six floors. Floor 0 is used for entering and exiting the building, and floors 1 through 5 have the same number of residents. The building has one elevator. With it, residents may either leave the building or enter and return to their floor. No resident may take the elevator between floors, and so every call to the elevator is either taking a resident from floor 0 up to their floor or vice versa. Hence, we observe that half of all calls are from floor 0, and go to another floor each with probability $\frac{1}{5}$. The other half comes from the resident floors with equal probability $\frac{1}{5}$, and all go to floor 0.
 
@@ -16,3 +18,4 @@ So, your job is to minimize the __expected__ cost of a single call to the elevat
 
 ## About the simulator
 In this simulator, you can alter the parking algorithm and relative weighting, and then test it. By randomly simulating a large number of calls, the simulator gives an accurate approximation of the expected cost per call of your parking algorithm. So, whether you are prioritizing energy efficiency or resident satisfaction, run the simulation now to visualize how different parking strategies impact your expected costs.
+
